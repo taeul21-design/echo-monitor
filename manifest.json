@@ -1,0 +1,24 @@
+{
+  "name": "친환경 인증농산물 조회",
+  "short_name": "인증조회",
+  "description": "현장에서 인증번호를 입력하여 친환경 인증농산물 여부를 즉시 확인합니다.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1a7c3e",
+  "theme_color": "#1a7c3e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1a7c3e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="인증조회" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>친환경 인증농산물 조회</title>
+  <style>
+    :root {
+      --green: #1a7c3e;
+      --green-dark: #145f30;
+      --green-light: #e8f5ee;
+      --green-mid: #2ea05a;
+      --red: #d32f2f;
+      --red-light: #ffebee;
+      --orange: #e65100;
+      --orange-light: #fff3e0;
+      --gray: #757575;
+      --gray-light: #f5f5f5;
+      --white: #ffffff;
+      --radius: 12px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+      background: var(--gray-light);
+      min-height: 100vh;
+      color: #222;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--green);
+      color: white;
+      padding: 16px 20px 20px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    header .agency {
+      font-size: 11px;
+      opacity: 0.85;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    header .subtitle {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-top: 4px;
+    }
+
+    /* ── Status bar ── */
+    .status-bar {
+      background: var(--green-dark);
+      color: rgba(255,255,255,0.85);
+      font-size: 11px;
+      text-align: center;
+      padding: 5px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .status-bar .dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #4caf50;
+      margin-right: 5px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity:1; } 50% { opacity:0.4; }
+    }
+
+    /* ── Search Card ── */
+    .search-card {
+      margin: 16px;
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+    .search-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--green);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+    #certInput {
+      flex: 1;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      padding: 14px 16px;
+      outline: none;
+      transition: border-color 0.2s;
+      color: #222;
+      background: #fafafa;
+    }
+    #certInput:focus {
+      border-color: var(--green);
+      background: white;
+    }
+    #certInput::placeholder {
+      font-size: 14px;
+      font-weight: 400;
+      letter-spacing: 0;
+      color: #bbb;
+    }
+    #searchBtn {
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 0 20px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      white-space: nowrap;
+      min-width: 72px;
+    }
+    #searchBtn:active { transform: scale(0.97); background: var(--green-dark); }
+
+    .hint {
+      font-size: 11px;
+      color: var(--gray);
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    /* ── Data Update Section ── */
+    .update-section {
+      margin: 0 16px 8px;
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .update-header {
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+    }
+    .update-header span {
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .update-header .arrow {
+      font-size: 12px;
+      color: #aaa;
+      transition: transform 0.2s;
+    }
+    .update-header.open .arrow { transform: rotate(180deg); }
+    .update-body {
+      display: none;
+      padding: 0 18px 16px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .update-body.visible { display: block; }
+    .update-body p {
+      font-size: 12px;
+      color: #666;
+      margin: 10px 0 12px;
+      line-height: 1.6;
+    }
+    .file-upload-btn {
+      display: block;
+      width: 100%;
+      padding: 11px;
+      background: var(--green-light);
+      border: 2px dashed var(--green);
+      border-radius: 8px;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+    }
+    #fileInput { display: none; }
+    .progress-bar {
+      height: 4px;
+      background: #eee;
+      border-radius: 2px;
+      margin-top: 10px;
+      overflow: hidden;
+      display: none;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--green);
+      width: 0%;
+      transition: width 0.3s;
+      border-radius: 2px;
+    }
+
+    /* ── Result ── */
+    #result {
+      margin: 0 16px 16px;
+    }
+
+    .result-card {
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      animation: fadeIn 0.25s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity:0; transform: translateY(8px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    .result-header {
+      padding: 20px 20px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .result-icon {
+      font-size: 36px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .result-title-block .result-title {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+    .result-title-block .result-subtitle {
+      font-size: 13px;
+      margin-top: 4px;
+      opacity: 0.85;
+    }
+    .result-title-block .cert-badge {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      letter-spacing: 1px;
+    }
+
+    /* match */
+    .result-card.match .result-header { background: var(--green); color: white; }
+    .result-card.match .cert-badge { background: rgba(255,255,255,0.25); color: white; }
+
+    /* nomatch */
+    .result-card.nomatch .result-header { background: var(--red); color: white; }
+    .result-card.nomatch .cert-badge { background: rgba(255,255,255,0.25); color: white; }
+
+    /* expired */
+    .result-card.expired .result-header { background: var(--orange); color: white; }
+    .result-card.expired .cert-badge { background: rgba(255,255,255,0.25); color: white; }
+
+    /* ── Detail rows ── */
+    .detail-body {
+      background: white;
+      padding: 16px 18px;
+    }
+    .detail-row {
+      display: flex;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+      gap: 10px;
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-icon {
+      width: 28px;
+      text-align: center;
+      font-size: 16px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .detail-label {
+      font-size: 11px;
+      color: var(--gray);
+      font-weight: 600;
+      min-width: 60px;
+    }
+    .detail-value {
+      font-size: 15px;
+      font-weight: 600;
+      color: #222;
+      flex: 1;
+      line-height: 1.4;
+    }
+
+    /* validity badge */
+    .validity-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .validity-badge.valid   { background: var(--green-light); color: var(--green); }
+    .validity-badge.expired { background: var(--red-light);   color: var(--red); }
+    .validity-badge.soon    { background: var(--orange-light); color: var(--orange); }
+
+    /* ── Not found ── */
+    .notfound-body {
+      background: white;
+      padding: 28px 20px;
+      text-align: center;
+    }
+    .notfound-body .nf-icon { font-size: 40px; margin-bottom: 10px; }
+    .notfound-body .nf-title { font-size: 16px; font-weight: 700; color: var(--red); margin-bottom: 8px; }
+    .notfound-body .nf-desc { font-size: 13px; color: #666; line-height: 1.7; }
+
+    /* ── Loading ── */
+    .loading-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 999;
+      gap: 16px;
+    }
+    .spinner {
+      width: 48px; height: 48px;
+      border: 5px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { color: white; font-size: 15px; font-weight: 600; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 20px 16px 32px;
+      font-size: 11px;
+      color: #aaa;
+      line-height: 1.8;
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 30px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #333;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 1000;
+      white-space: nowrap;
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">인증 데이터 불러오는 중...</div>
+</div>
+
+<!-- Header -->
+<header>
+  <div class="agency">🌿 국립농산물품질관리원</div>
+  <h1>친환경 인증농산물 조회</h1>
+  <div class="subtitle">유통 현장 인증번호 확인 시스템</div>
+</header>
+
+<!-- Status Bar -->
+<div class="status-bar" id="statusBar">
+  <span><span class="dot"></span>데이터 로딩 중...</span>
+  <span id="statusDate"></span>
+</div>
+
+<!-- Search Card -->
+<div class="search-card">
+  <div class="search-label">
+    🔍 인증번호 입력
+  </div>
+  <div class="input-row">
+    <input type="text" id="certInput"
+      placeholder="예) 01100001"
+      inputmode="text"
+      autocomplete="off"
+      autocorrect="off"
+      spellcheck="false"
+      maxlength="30"
+    />
+    <button id="searchBtn" onclick="search()">조회</button>
+  </div>
+  <div class="hint">인증번호를 입력 후 [조회] 버튼을 누르거나 Enter를 누르세요</div>
+</div>
+
+<!-- Data Update Section -->
+<div class="update-section">
+  <div class="update-header" id="updateHeader" onclick="toggleUpdate()">
+    <span>📂 데이터 업데이트</span>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="update-body" id="updateBody">
+    <p>새 인증 데이터 엑셀 파일(.xls/.xlsx)을 업로드하면<br>앱의 기초자료를 즉시 갱신합니다.</p>
+    <label class="file-upload-btn" for="fileInput">
+      📥 엑셀 파일 선택하여 업데이트
+    </label>
+    <input type="file" id="fileInput" accept=".xls,.xlsx" onchange="uploadFile(this)" />
+    <div class="progress-bar" id="progressBar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Result Area -->
+<div id="result"></div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Footer -->
+<footer>
+  국립농산물품질관리원 · 친환경인증 사후관리<br>
+  기준일자: <span id="footerDate"></span> · 총 <span id="footerCount"></span>건
+</footer>
+
+<!-- SheetJS for XLS parsing -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+// ════════════════════════════════════════════
+//  App State
+// ════════════════════════════════════════════
+let certMap = {};    // { normalizedNo: record }
+let totalCount = 0;
+let dataDate = '기준일 미상';
+
+// ════════════════════════════════════════════
+//  Normalize certification number
+//  - remove spaces, hyphens, dots
+// ════════════════════════════════════════════
+function normalize(str) {
+  return String(str).replace(/[\s\-\.]/g, '').toUpperCase();
+}
+
+// ════════════════════════════════════════════
+//  Parse period string -> { start, end }
+//  Format: "2025.07.09 ~ 2026.07.08"
+// ════════════════════════════════════════════
+function parsePeriod(periodStr) {
+  if (!periodStr) return null;
+  const parts = periodStr.split('~');
+  if (parts.length < 2) return null;
+  const parseDate = (s) => {
+    const d = s.trim().replace(/\./g, '-');
+    return new Date(d);
+  };
+  return { start: parseDate(parts[0]), end: parseDate(parts[1]) };
+}
+
+// ════════════════════════════════════════════
+//  Check validity
+// ════════════════════════════════════════════
+function checkValidity(periodStr) {
+  const parsed = parsePeriod(periodStr);
+  if (!parsed) return { status: 'unknown', label: '기간 미확인', dday: null };
+  const now = new Date();
+  now.setHours(0,0,0,0);
+  const end = parsed.end;
+  const diffMs = end - now;
+  const diffDays = Math.ceil(diffMs / (1000*60*60*24));
+  if (diffDays < 0) {
+    return { status: 'expired', label: `만료 (${Math.abs(diffDays)}일 경과)`, dday: diffDays };
+  } else if (diffDays <= 30) {
+    return { status: 'soon', label: `만료 임박 (D-${diffDays})`, dday: diffDays };
+  } else {
+    return { status: 'valid', label: `유효 (D-${diffDays})`, dday: diffDays };
+  }
+}
+
+// ════════════════════════════════════════════
+//  Build map from records array
+// ════════════════════════════════════════════
+function buildMap(records) {
+  certMap = {};
+  records.forEach(r => {
+    const key = normalize(r.no);
+    if (key) certMap[key] = r;
+  });
+  totalCount = Object.keys(certMap).length;
+}
+
+// ════════════════════════════════════════════
+//  Load bundled data.json
+// ════════════════════════════════════════════
+async function loadBundledData() {
+  try {
+    const res = await fetch('./data.json');
+    if (!res.ok) throw new Error('data.json not found');
+    const records = await res.json();
+    buildMap(records);
+
+    // Try to get date from filename hint or use today
+    const today = new Date();
+    dataDate = `${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')} 기준`;
+    return true;
+  } catch(e) {
+    console.warn('bundled data load failed:', e);
+    return false;
+  }
+}
+
+// ════════════════════════════════════════════
+//  Load from localStorage (user-uploaded)
+// ════════════════════════════════════════════
+function loadFromStorage() {
+  try {
+    const stored = localStorage.getItem('eco_cert_data');
+    const storedDate = localStorage.getItem('eco_cert_date');
+    if (!stored) return false;
+    const records = JSON.parse(stored);
+    buildMap(records);
+    if (storedDate) dataDate = storedDate;
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+// ════════════════════════════════════════════
+//  Init
+// ════════════════════════════════════════════
+async function init() {
+  const overlay = document.getElementById('loadingOverlay');
+  const loadingText = document.getElementById('loadingText');
+
+  // Try user-uploaded data first, then bundled
+  const fromStorage = loadFromStorage();
+  if (!fromStorage) {
+    loadingText.textContent = '인증 데이터 불러오는 중...';
+    const ok = await loadBundledData();
+    if (!ok) {
+      loadingText.textContent = '데이터 로드 실패 - 엑셀 파일을 업로드해 주세요';
+      overlay.style.background = 'rgba(180,0,0,0.7)';
+      setTimeout(() => overlay.style.display = 'none', 2500);
+      updateStatusBar();
+      return;
+    }
+  }
+
+  overlay.style.display = 'none';
+  updateStatusBar();
+
+  // Set footer info
+  const today = new Date();
+  document.getElementById('footerDate').textContent = dataDate;
+  document.getElementById('footerCount').textContent = totalCount.toLocaleString();
+  document.getElementById('statusDate').textContent = today.toLocaleDateString('ko-KR');
+}
+
+function updateStatusBar() {
+  const bar = document.getElementById('statusBar');
+  if (totalCount > 0) {
+    bar.innerHTML = `<span><span class="dot"></span>데이터 정상 로드</span><span>${totalCount.toLocaleString()}건 · ${dataDate}</span>`;
+  } else {
+    bar.innerHTML = `<span style="color:#ff8a80">⚠️ 데이터 없음 - 엑셀 업로드 필요</span><span></span>`;
+  }
+}
+
+// ════════════════════════════════════════════
+//  Search
+// ════════════════════════════════════════════
+function search() {
+  const raw = document.getElementById('certInput').value.trim();
+  if (!raw) {
+    showToast('인증번호를 입력해 주세요');
+    return;
+  }
+
+  const key = normalize(raw);
+  const record = certMap[key];
+  const resultEl = document.getElementById('result');
+
+  if (record) {
+    const validity = checkValidity(record.period);
+    const cardClass = validity.status === 'expired' ? 'expired' : 'match';
+
+    let validityBadge = '';
+    if (validity.status === 'valid') {
+      validityBadge = `<span class="validity-badge valid">✅ ${validity.label}</span>`;
+    } else if (validity.status === 'soon') {
+      validityBadge = `<span class="validity-badge soon">⚠️ ${validity.label}</span>`;
+    } else if (validity.status === 'expired') {
+      validityBadge = `<span class="validity-badge expired">❌ ${validity.label}</span>`;
+    } else {
+      validityBadge = `<span class="validity-badge">${validity.label}</span>`;
+    }
+
+    const headerTitle = cardClass === 'expired' ? '인증 만료' : '인증 확인';
+    const headerSub = cardClass === 'expired'
+      ? '유효기간이 만료된 인증입니다'
+      : '등록된 인증농가와 일치합니다';
+    const icon = cardClass === 'expired' ? '⚠️' : '✅';
+
+    resultEl.innerHTML = `
+      <div class="result-card ${cardClass}">
+        <div class="result-header">
+          <div class="result-icon">${icon}</div>
+          <div class="result-title-block">
+            <div class="result-title">${headerTitle}</div>
+            <div class="result-subtitle">${headerSub}</div>
+            <div class="cert-badge">${record.no}</div>
+          </div>
+        </div>
+        <div class="detail-body">
+          <div class="detail-row">
+            <div class="detail-icon">🌾</div>
+            <div>
+              <div class="detail-label">대표품목</div>
+              <div class="detail-value">${record.product || '-'}</div>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-icon">👤</div>
+            <div>
+              <div class="detail-label">생산자</div>
+              <div class="detail-value">${record.producer || '-'}</div>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-icon">📍</div>
+            <div>
+              <div class="detail-label">소재지</div>
+              <div class="detail-value">${record.address || '-'}</div>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-icon">📅</div>
+            <div>
+              <div class="detail-label">인증기간</div>
+              <div class="detail-value">${record.period || '-'}</div>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-icon">🔖</div>
+            <div>
+              <div class="detail-label">유효상태</div>
+              <div class="detail-value">${validityBadge}</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  } else {
+    resultEl.innerHTML = `
+      <div class="result-card nomatch">
+        <div class="result-header">
+          <div class="result-icon">❌</div>
+          <div class="result-title-block">
+            <div class="result-title">불일치</div>
+            <div class="result-subtitle">등록된 인증번호가 없습니다</div>
+            <div class="cert-badge">${raw}</div>
+          </div>
+        </div>
+        <div class="notfound-body">
+          <div class="nf-icon">🔍</div>
+          <div class="nf-title">인증번호 미등록</div>
+          <div class="nf-desc">
+            입력하신 <strong>${raw}</strong> 번호는<br>
+            현재 친환경 인증농가 목록에 없습니다.<br><br>
+            · 인증번호 오기입 여부를 확인하세요<br>
+            · 인증 취소 또는 만료된 농가일 수 있습니다<br>
+            · 데이터 기준일을 확인하세요
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Scroll to result
+  resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ════════════════════════════════════════════
+//  Handle Excel file upload
+// ════════════════════════════════════════════
+function uploadFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const progressBar = document.getElementById('progressBar');
+  const progressFill = document.getElementById('progressFill');
+  progressBar.style.display = 'block';
+  progressFill.style.width = '10%';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    progressFill.style.width = '40%';
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+      progressFill.style.width = '70%';
+
+      // Find header row
+      let headerRow = -1;
+      for (let i = 0; i < Math.min(rows.length, 10); i++) {
+        if (rows[i] && rows[i].some(c => String(c).includes('인증번호'))) {
+          headerRow = i;
+          break;
+        }
+      }
+
+      if (headerRow === -1) {
+        showToast('❌ 인증번호 컬럼을 찾을 수 없습니다');
+        progressBar.style.display = 'none';
+        return;
+      }
+
+      const headers = rows[headerRow].map(h => String(h || '').trim());
+      const colNo      = headers.findIndex(h => h.includes('인증번호'));
+      const colProduct = headers.findIndex(h => h.includes('품목'));
+      const colProducer= headers.findIndex(h => h.includes('생산자'));
+      const colAddress = headers.findIndex(h => h.includes('주소'));
+      const colPeriod  = headers.findIndex(h => h.includes('인증기간') || h.includes('기간'));
+
+      const records = [];
+      for (let i = headerRow + 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row) continue;
+        const no = String(row[colNo] || '').trim();
+        if (!no) continue;
+        records.push({
+          no,
+          product:  colProduct  >= 0 ? String(row[colProduct]  || '').trim() : '',
+          producer: colProducer >= 0 ? String(row[colProducer] || '').trim() : '',
+          address:  colAddress  >= 0 ? String(row[colAddress]  || '').trim() : '',
+          period:   colPeriod   >= 0 ? String(row[colPeriod]   || '').trim() : '',
+        });
+      }
+
+      progressFill.style.width = '90%';
+
+      // Save to localStorage
+      const today = new Date();
+      const dateStr = `${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')} 업데이트`;
+      try {
+        localStorage.setItem('eco_cert_data', JSON.stringify(records));
+        localStorage.setItem('eco_cert_date', dateStr);
+      } catch(e) {
+        console.warn('localStorage full, using in-memory only');
+      }
+
+      buildMap(records);
+      dataDate = dateStr;
+      updateStatusBar();
+
+      document.getElementById('footerDate').textContent = dataDate;
+      document.getElementById('footerCount').textContent = totalCount.toLocaleString();
+
+      progressFill.style.width = '100%';
+      setTimeout(() => { progressBar.style.display = 'none'; progressFill.style.width = '0'; }, 500);
+
+      showToast(`✅ ${records.length.toLocaleString()}건 데이터 업데이트 완료`);
+      toggleUpdate(); // collapse panel
+
+    } catch(err) {
+      console.error(err);
+      showToast('❌ 파일 처리 오류: ' + err.message);
+      progressBar.style.display = 'none';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ════════════════════════════════════════════
+//  UI helpers
+// ════════════════════════════════════════════
+function toggleUpdate() {
+  const body = document.getElementById('updateBody');
+  const header = document.getElementById('updateHeader');
+  body.classList.toggle('visible');
+  header.classList.toggle('open');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// Enter key support
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('certInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') search();
+  });
+});
+
+// ════════════════════════════════════════════
+//  Service Worker Registration
+// ════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW:', e));
+  });
+}
+
+// ════════════════════════════════════════════
+//  Boot
+// ════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
